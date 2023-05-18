@@ -193,3 +193,78 @@ CREATE OR REPLACE FUNCTION CADASTRAR_PARCEIRO()
 
 
 -- $$
+
+/*
+============================================
+||                                    	  ||
+||      Função para Validar TELEFONE      ||
+||                                        ||
+============================================
+*/
+
+CREATE OR REPLACE FUNCTION VALIDAR_TELEFONE()
+RETURNS TRIGGER
+AS $$
+BEGIN
+	IF LENGTH(CAST (NEW.TELEFONE AS TEXT)) !== 11 THEN
+		RAISE EXCEPTION 'INVALID PHONE';
+	END IF
+	RETURN NEW;
+END;
+$$
+LANGUAGE 'plpgsql'
+
+/*
+=========================================
+||                                     ||
+||      Função para Validar EMAIL      ||
+||                                     ||
+=========================================
+*/
+
+CREATE OR REPLACE FUNCTION VALIDAR_EMAIL()
+RETURNS TRIGGER
+AS $$
+BEGIN
+	IF EMAIL ~ '^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$' THEN
+		RETURN NEW;
+	ELSE
+		RAISE EXCEPTION 'EMAIL INVALIDO. %', NEW.EMAIL;
+	END IF;
+END;
+$$
+LANGUAGE 'plpgsql'
+
+SELECT VALIDAR_EMAIL('diesgo.araujo@gmail.com')
+
+/*
+=====================================================
+||                                     			   ||
+||      Função para Validar PAGAMENTO ALUGUEL      ||
+||                                     			   ||
+=====================================================
+*/
+
+
+CREATE OR REPLACE FUNCTION PAGAMENTO_PEDIDO(_ID_PEDIDO INT)
+RETURNS VOID
+$$
+VALOR_DIARIA_VAR FLOAT := 0;
+BEGIN
+	FOR VALOR_DIARIA IN SELECT COUNT (VALOR_DIARIA) FROM PEDRA WHERE 
+	SELECT VALOR_DIARIA INTO VALOR_DIARIA_VAR FROM PEDRA;
+
+	UPDATE PEDIDO SET 
+	VALOR_ALUGUEL = VALOR_DIARIO * DIAS + VALOR_VENDIDO,
+	DATA_PAGAMENTO = CURRENT_DATE,
+	WHERE ID_PEDIDO = _ID_PEDIDO
+END;
+$$
+LANGUAGE 'plpgsql'
+
+CREATE OR REPLACE FUNCTION TESTE()
+RETURNS VOID
+AS $$
+BEGIN
+END;
+$$
