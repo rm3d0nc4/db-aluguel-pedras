@@ -1,69 +1,6 @@
 
 -- Funções
 
-
-
-/*
-========================================
-||                                    ||
-||       Função para Realizar         ||
-||              Pedido                ||
-========================================
-*/
-CREATE OR REPLACE FUNCTION CRIAR_PEDIDO(
-	_ID_METODO_PAGAMENTO INT, 
-	_ID_PARCEIRO INT, 
-	_ID_ANALISTA INT, 
-	_DATA_VENCIMENTO_PAGAMENTO_COMISSAO DATE
-) RETURNS INT AS $$
-	DECLARE VAR_ID_PEDIDO INT;
-	BEGIN
-		INSERT INTO PEDIDO(ID_METODO_PGTO, ID_PARCEIRO, ID_ANALISTA, DATA_VENCIMENTO_PAGAMENTO_COMISSAO) 
-		VALUES (_ID_METODO_PAGAMENTO, _ID_PARCEIRO, _ID_ANALISTA, _DATA_VENCIMENTO_PAGAMENTO_COMISSAO + 10)
-		RETURNING ID_PEDIDO INTO VAR_ID_PEDIDO;
-		RETURN VAR_ID_PEDIDO;
-	END
-
-$$ LANGUAGE 'plpgsql';
-
-
-
-/*
-========================================
-||                                    ||
-||       Função para Adicionar        ||
-||          Pedra ao Pedido           ||
-========================================
-*/
-CREATE OR REPLACE FUNCTION ADD_ITEM(
-	_ID_PEDRA INT, 
-	_DATA_INICIAL DATE, 
-	_DATA_FINAL DATE,
-	_ID_PEDIDO INT DEFAULT NULL,
-	_CPF_CNPJ INT DEFAULT NULL, 
-	_ID_METODO_PAGAMENTO INT DEFAULT NULL
-	) RETURNS INT AS $$
-	DECLARE
-	VAR_ID_ANALISTA INT;
-	VAR_ID_PARCEIRO INT;
-	VAR_ID_PEDIDO INT := _ID_PEDIDO;
-	BEGIN
-	SELECT ID_ANALISTA INTO VAR_ID_ANALISTA FROM ANALISTA WHERE NOME = CURRENT_USER;
-	SELECT ID_PARCEIRO INTO VAR_ID_PARCEIRO FROM PARCEIRO WHERE CPF_CNPJ = _CPF_CNPJ;
-
-	IF _ID_PEDIDO = NULL THEN
-		SELECT CRIAR_PEDIDO(ID_METODO_PAGAMENTO, ID_PARCEIRO, ID_ANALISTA, DATA_VENCIMENTO_PAGAMENTO_COMISSAO) INTO VAR_ID_PEDIDO;
-		RAISE NOTICE 'PEDIDO Nº % FOI CADASTRADO COM SUCESSO', VAR_ID_PEDIDO;
-	END IF;
-	
-	INSERT INTO LISTA_PEDRAS_PEDIDO VALUES (ID_PEDRA, VAR_ID_PEDIDO, _DATA_INICIAL, _DATA_FINAL);
-	RAISE NOTICE 'PEDRA ADICIONADA AO PEDIDO Nº %', VAR_ID_PEDIDO;
-	
-	END;
-$$ LANGUAGE 'plpgsql'
-
-
-
 /*
 ========================================
 ||                                    ||
@@ -160,40 +97,6 @@ END;
 $$ LANGUAGE 'plpgsql';
 
 
--- CADASTRAR PARCEIRO ==========================
-
-CREATE OR REPLACE FUNCTION CADASTRAR_PARCEIRO()
-
--- Validar CPF ou CNPJ, TELEFONE e EMAIL
--- Função para realizar pagamento de um pedido (id_pedido) e gerar data de vencimento de pagamento da comissao
--- Funcao para pagar comissao (id_pedido)
--- Trigger para verificar se o parceiro possui multas
--- Trigger para gerar uma multa caso a comissão não tenha sido paga
--- chamar função aplicar multa
--- Funcao aplicar multa
--- Funcao pagar multa
--- Funcao para adicionar pedra ao pedido (id do pedido, id da pedra, data inicial, data final, metodo_pgto)
--- -- Funcao para atualizar o faturamento da pedra (id da pedra, id do pedido, valor)
--- -- Funcao para remover pedra do pedido (id da pedra, id do pedido)
--- -- Funcao para atualizar datas de uma pedra (id do pedra, id do pedido, data inicial, data final)
--- -- Trigger para atualizar o valor da comissão
--- -- Trigger para impedir adição de pedra em pedido já pago
--- -- 
--- Funcao para verificar status da pedra (id da pedra, data inicial, data final)
-
-
--- SELECT * FROM PEDRA FULL JOIN (SELECT * FROM LISTA_PEDRAS_PEDIDO PP WHERE DATA_INICIAL >= '2023-03-29' OR DATA_FINAL >= '2023-03-30') AS DIS  
--- 			   ON DIS.ID_PEDRA = PEDRA.ID_PEDRA
-
-
--- CREATE OR REPLACE FUNCTION VER_STATUS_PEDRA(_ID_PEDRA, _DATA_INICAL, _DATA_FINAL) 
--- RETURNS ROW AS $$
-
--- 	BEGIN
-
-
--- $$
-
 /*
 ============================================
 ||                                    	  ||
@@ -202,18 +105,19 @@ CREATE OR REPLACE FUNCTION CADASTRAR_PARCEIRO()
 ============================================
 */
 
-CREATE OR REPLACE FUNCTION VALIDAR_TELEFONE()
-RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION VALIDAR_TELEFONE(_TELEFONE VARCHAR(11))
+RETURNS VOID
 AS $$
 BEGIN
-	IF LENGTH(CAST (NEW.TELEFONE AS TEXT)) !== 11 THEN
+	IF LENGTH(_TELEFONE) != 11 THEN
 		RAISE EXCEPTION 'INVALID PHONE';
-	END IF
-	RETURN NEW;
+	END IF;
 END;
 $$
-LANGUAGE 'plpgsql'
+LANGUAGE 'plpgsql';
 
+
+-- SELECT * FROM VALIDAR_TELEFONE('86999717036')
 /*
 =========================================
 ||                                     ||
@@ -222,20 +126,93 @@ LANGUAGE 'plpgsql'
 =========================================
 */
 
-CREATE OR REPLACE FUNCTION VALIDAR_EMAIL()
-RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION VALIDAR_EMAIL(_EMAIL VARCHAR(100))
+RETURNS VOID
 AS $$
 BEGIN
-	IF EMAIL ~ '^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$' THEN
-		RETURN NEW;
-	ELSE
-		RAISE EXCEPTION 'EMAIL INVALIDO. %', NEW.EMAIL;
+	IF NOT _EMAIL ~ '^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$' THEN
+		RAISE EXCEPTION 'EMAIL INVALIDO. %', _EMAIL;
 	END IF;
 END;
-$$
-LANGUAGE 'plpgsql'
+$$ LANGUAGE 'plpgsql';
 
-SELECT VALIDAR_EMAIL('diesgo.araujo@gmail.com')
+-- SELECT * FROM VALIDAR_EMAIL('romeromendonca22@gmail.com')
+/*
+========================================
+||                                    ||
+||      Função Cadastrar Parceiro     ||
+||                                    ||
+========================================
+*/
+CREATE OR REPLACE FUNCTION CADASTRAR_PARCEIRO(_NOME TEXT, _CPF_CNPJ VARCHAR(14), _TELEFONE TEXT, _EMAIL TEXT, _ENDERECO TEXT, _TIPO_PESSOA INT ) 
+RETURNS VOID AS $$
+	BEGIN
+		INSERT INTO PARCEIRO VALUES 
+		(DEFAULT, _NOME, _CPF_CNPJ, _TELEFONE, _EMAIL, _ENDERECO, _TIPO_PESSOA);
+	END;
+$$ LANGUAGE 'plpgsql';
+
+-- SELECT * FROM CADASTRAR_PARCEIRO('ROMERO ANTONIO', '10030812313', '86999971736', 'romeromendonca@22gmail.com', 'RUA DAS LESMAS', 1);
+
+/*
+========================================
+||                                    ||
+||       Função para Realizar         ||
+||              Pedido                ||
+========================================
+*/
+CREATE OR REPLACE FUNCTION CRIAR_PEDIDO(
+	_ID_METODO_PAGAMENTO INT, 
+	_ID_PARCEIRO INT, 
+	_ID_ANALISTA INT, 
+	_DATA_VENCIMENTO_PAGAMENTO_COMISSAO DATE
+) RETURNS INT AS $$
+	DECLARE VAR_ID_PEDIDO INT;
+	BEGIN
+		INSERT INTO PEDIDO VALUES (
+			DEFAULT, _ID_METODO_PAGAMENTO, 
+			_ID_PARCEIRO, _ID_ANALISTA, 
+			_DATA_VENCIMENTO_PAGAMENTO_COMISSAO + 10
+		) RETURNING ID_PEDIDO INTO VAR_ID_PEDIDO;
+		RETURN VAR_ID_PEDIDO;
+	END
+
+$$ LANGUAGE 'plpgsql';
+
+/*
+========================================
+||                                    ||
+||       Função para Adicionar        ||
+||          Pedra ao Pedido           ||
+========================================
+*/
+CREATE OR REPLACE FUNCTION ADD_ITEM(
+	_ID_PEDRA INT, 
+	_DATA_INICIAL DATE, 
+	_DATA_FINAL DATE,
+	_ID_PEDIDO INT DEFAULT NULL,
+	_CPF_CNPJ INT DEFAULT NULL, 
+	_ID_METODO_PAGAMENTO INT DEFAULT NULL
+	) RETURNS INT AS $$
+	DECLARE
+	VAR_ID_ANALISTA INT;
+	VAR_ID_PARCEIRO INT;
+	VAR_ID_PEDIDO INT := _ID_PEDIDO;
+	BEGIN
+	SELECT ID_ANALISTA INTO VAR_ID_ANALISTA FROM ANALISTA WHERE NOME = CURRENT_USER;
+	SELECT ID_PARCEIRO INTO VAR_ID_PARCEIRO FROM PARCEIRO WHERE CPF_CNPJ = _CPF_CNPJ;
+
+	IF _ID_PEDIDO = NULL THEN
+		SELECT CRIAR_PEDIDO(ID_METODO_PAGAMENTO, ID_PARCEIRO, ID_ANALISTA, DATA_VENCIMENTO_PAGAMENTO_COMISSAO) INTO VAR_ID_PEDIDO;
+		RAISE NOTICE 'PEDIDO Nº % FOI CADASTRADO COM SUCESSO', VAR_ID_PEDIDO;
+	END IF;
+	
+	INSERT INTO LISTA_PEDRAS_PEDIDO VALUES (ID_PEDRA, VAR_ID_PEDIDO, _DATA_INICIAL, _DATA_FINAL);
+	RAISE NOTICE 'PEDRA ADICIONADA AO PEDIDO Nº %', VAR_ID_PEDIDO;
+	
+	END;
+$$ LANGUAGE 'plpgsql';
+
 
 /*
 =====================================================
@@ -268,3 +245,7 @@ AS $$
 BEGIN
 END;
 $$
+
+SELECT * FROM TIPO_PESSOA
+
+SELECT * FROM CADASTRAR_PARCEIRO('ROMERO MENDONÇA', '10030812323', '86999971736', 'romeromendonca22@gmailcom', 'Rua das Lesmas', 1)
