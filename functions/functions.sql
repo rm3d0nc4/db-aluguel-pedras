@@ -427,7 +427,7 @@ SELECT * FROM FATURAR_PEDRA(2, 2, 20.00)
 /*
 =====================================
 ||           Função para       	   ||
-||      Atualizar faturamento      ||
+||    Multar Pedido de Aluguel     ||
 ||                                 ||
 =====================================
 */
@@ -447,6 +447,17 @@ RETURNS SETOF MULTA AS $$
 		END IF;
 	END;
 $$ LANGUAGE 'plpgsql';
+
+
+
+/*
+=====================================
+||           Função para       	   ||
+||      Verificar Multas Ativas    ||
+||                                 ||
+=====================================
+*/
+
 
 
 CREATE OR REPLACE FUNCTION VERIFICAR_MULTAS(_CPF_CNPJ TEXT) 
