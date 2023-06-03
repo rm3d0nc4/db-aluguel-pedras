@@ -137,8 +137,6 @@ END;
 $$ LANGUAGE 'plpgsql';
 
 -- SELECT * FROM VALIDAR_EMAIL('romeromendonca22@gmail.com');
-/*
-
 
 /*
 =========================================
@@ -176,11 +174,11 @@ $$ LANGUAGE 'plpgsql';
 ||                                    ||
 ========================================
 */
-CREATE OR REPLACE FUNCTION CADASTRAR_PARCEIRO(_NOME TEXT, _CPF_CNPJ VARCHAR(14), _TELEFONE TEXT, _EMAIL TEXT, _ENDERECO TEXT, _TIPO_PESSOA INT ) 
+CREATE OR REPLACE FUNCTION CADASTRAR_PARCEIRO(_NOME TEXT, _CPF_CNPJ VARCHAR(14), _TELEFONE TEXT, _EMAIL TEXT, _ENDERECO TEXT, _ID_TIPO_PESSOA INT ) 
 RETURNS VOID AS $$
 	BEGIN
 		INSERT INTO PARCEIRO VALUES 
-		(DEFAULT, _NOME, _CPF_CNPJ, _TELEFONE, _EMAIL, _ENDERECO, _TIPO_PESSOA);
+		(DEFAULT, _NOME, _CPF_CNPJ, _TELEFONE, _EMAIL, _ENDERECO, _ID_TIPO_PESSOA);
 	END;
 $$ LANGUAGE 'plpgsql';
 
@@ -212,7 +210,6 @@ $$ LANGUAGE 'plpgsql';
 
 /*
 ========================================
-||                                    ||
 ||       Função para Visualizar       ||
 ||        Pedras Disponíveis          ||
 ========================================
@@ -304,7 +301,7 @@ $$ LANGUAGE 'plpgsql';
 ========================================
 ||                                    ||
 ||       Função para Remover          ||
-||          Pedra ao Pedido           ||
+||          Pedra do Pedido           ||
 ========================================
 */
 
@@ -390,7 +387,7 @@ RETURNS SETOF PEDIDO AS $$
 
 		UPDATE PEDIDO SET 
 		ID_METODO_PAGAMENTO = _METODO_PAGAMENTO, 
-		DATA_PAGAMENTO = NOW(),
+		DATA_PAGAMENTO_PEDIDO = NOW(),
 		NUMERO_NOTA = gen_random_uuid() WHERE ID_PEDIDO = _ID_PEDIDO;
 		
 		RAISE NOTICE 'PEDIDO PAGO COM SUCESSO!';
